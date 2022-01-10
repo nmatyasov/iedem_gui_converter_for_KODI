@@ -56,6 +56,14 @@ def dwnld_all_channel():
     for k in sorted(json_list):
         all_channels.insert('end', f'{n}.\t{k}\n')
         n += 1
+   
+   # читаем файл моих каналов
+    with open('favorits.txt', 'r', encoding='utf-8') as fl:
+      my_channel_list=fl.read().splitlines()
+      fl.close() 
+   
+    for c in my_channel_list:
+        favorites_channels.insert('end', f'{c.upper()}\n')
 
 
 # функция, которая конвентирует и сортирует
@@ -74,6 +82,7 @@ def convert_playlist():
     num_on_list = []
     group_del_list = []
     temp_num = 0
+    duplicate_list = []
 
     # переводим в utf8 и добавляем каждую строку в список
     playlist.encoding = 'utf-8'
@@ -145,23 +154,26 @@ def convert_playlist():
     if group_del_state_25.get():
         group_del_list.append('4K')
 
-    # из вышесозданного словаря формируем новый плейлист. Также производится удаление выбранных групп (по checkbutton)
-    for playlist_line_3 in json_list:
-        if playlist_line_3['group-title'] not in group_del_list:
-            group_edited_list.append(f'''#EXTINF:0 group-title="{playlist_line_3['group-title']}"\
- tvg-name="{playlist_line_3['tvg-name']}" tvg-logo="{playlist_line_3['tvg-logo']}"\
- {playlist_line_3['tvg-rec']},{playlist_line_3['tvg-name']}''')
-            group_edited_list.append(playlist_line_3['link'])
-
     # получаем список избранных каналов
     favorites_list = favorites_channels.get('1.0', END)
     favorites_list = favorites_list.split('\n')
     del favorites_list[-1]
 
+    # из вышесозданного словаря формируем новый плейлист. Также производится удаление выбранных групп (по checkbutton)
+    for playlist_line_3 in json_list:
+        if playlist_line_3['tvg-name'].upper() in favorites_list and playlist_line_3['tvg-name'].upper() not in duplicate_list:
+            if playlist_line_3['group-title'] not in group_del_list:
+                group_edited_list.append(f'''#EXTINF:0 group-title="{playlist_line_3['group-title']}"\
+ tvg-name="{playlist_line_3['tvg-name']}" tvg-logo="{playlist_line_3['tvg-logo']}"\
+ {playlist_line_3['tvg-rec']},{playlist_line_3['tvg-name']}''')
+                group_edited_list.append(playlist_line_3['link'])
+                duplicate_list.append(playlist_line_3['tvg-name'].upper())
+
+
     # формируем список избранных с получением их номера строк из вышесозданного плейлиста
     while temp_num < len(favorites_list):
         for num, val in enumerate(group_edited_list):
-            if favorites_list[temp_num] in val:
+            if favorites_list[temp_num].lower() in val.lower():
                 num_on_list.append(num)
                 num_on_list.append(num + 1)
         temp_num += 1
@@ -347,7 +359,7 @@ ttk.Button(mainframe, text="Загрузить", command=dwnld_all_channel)\
     .grid(column=1, row=10, sticky=W)
 
 # виджет, который при нажатии запускает функцию конвентирования
-ttk.Button(mainframe, text='КОНВЕНТИРОВАТЬ!', command=convert_playlist)\
+ttk.Button(mainframe, text='КОНВЕРТИРОВАТЬ!', command=convert_playlist)\
     .grid(column=0, row=12, sticky=(W, E), columnspan=6)
 
 author = ttk.Label(mainframe, text='daradan')
